@@ -60,6 +60,11 @@ class NeuralNet:
         a = np.clip(a, epsilon, 1 - epsilon)
         return (y * np.log(a) + (1 - y) * np.log(1 - a))
 
+    def loss_derivative(self, y: FloatArray, a: FloatArray) -> FloatArray:
+        epsilon = 1e-15
+        a = np.clip(a, epsilon, 1 - epsilon)
+        return -(np.divide(y, a) - np.divide(1 - y, 1 - a)) # Derivative of loss related to A_l
+
     def cost_function(self, y: FloatArray, a: FloatArray) -> float:
         m = y.shape[1]
         return -(1 / m) * np.sum(self.loss_function(y, a))
@@ -81,11 +86,13 @@ class NeuralNet:
 
     def back_prop(self, Y: FloatArray, A_l: FloatArray) -> None:
 
-        L = len(self.caches)
-        dA_l = -(np.divide(Y, A_l) - np.divide(1 - Y, 1 - A_l)) # Derivative of loss related to A_l
+
+        dA_l = self.loss_derivative(Y, A_l)
+
         Z, A, W = self.caches[-1]
         dZ = dA_l * self.sigmoid_back(Z)
 
+        L = len(self.caches)
         dA, dW, db = self.linear_backward(dZ, A, W)
         self.grads[f'dA{L-1}'] = dA
         self.grads[f'dW{L}'] = dW
@@ -103,8 +110,8 @@ class NeuralNet:
     def update_parameters(self, learning_rate: float = 0.001) -> None:
         L: int = len(self.parameters) // 2
         for i in range(1, L + 1):
-            self.parameters[f'W{i}'] -= learning_rate * self.grads[f'dW{i}']
-            self.parameters[f'b{i}'] -= learning_rate * self.grads[f'db{i}']
+            self.parameters[f'W{i}'] -= (learning_rate * self.grads[f'dW{i}'])
+            self.parameters[f'b{i}'] -= (learning_rate * self.grads[f'db{i}'])
 
 
 EPOCHS: int = 20
@@ -116,12 +123,12 @@ if __name__ == "__main__":
 
     n_x, n_y = X.shape[0], y.shape[0] # input and output neurons shape
 
-    net = NeuralNet([n_x, 32, 32, n_y])
+    net = NeuralNet([n_x, 64, 32, n_y])
 
     for _ in range(EPOCHS):
         al = net.forward_prop(X, )
         net.back_prop(y, al)
-        net.update_parameters(learning_rate=0.01)
+        net.update_parameters(learning_rate=0.1)
 
         print(net.cost_function(y, al))
 
@@ -129,4 +136,4 @@ if __name__ == "__main__":
 
     [print(round(val)) for val in al[0,:]]
 
-# Fix: Problem with large layers or large amount of layers
+# Fix: Problem of bad performance with large layers or large amount of layers
